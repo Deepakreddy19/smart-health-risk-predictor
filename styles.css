@@ -1,0 +1,89 @@
+/* --- BACKGROUND ANIMATION (NEW) --- */
+@keyframes gradient-animation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* General styling for the main app area */
+.stApp {
+    background: linear-gradient(-45deg, #e0f7fa, #e8f5e9, #f1f8e9, #e1f5fe);
+    background-size: 400% 400%;
+    animation: gradient-animation 15s ease infinite;
+}
+
+/* Force a white background on the sidebar */
+[data-testid="stSidebar"] {
+    background-color: #FFFFFF !important;
+}
+
+/* --- MAIN CARD STYLING --- */
+/* This targets the container for each tab's content */
+.st-emotion-cache-1y4p8pa {
+    background-color: #FFFFFF;
+    border-radius: 10px;
+    padding: 2rem;
+    border: 1px solid #E0E0E0;
+}
+
+/* --- FORCE DARK TEXT (MOST IMPORTANT FIX) --- */
+/* This rule targets all text elements within the main content cards to override the theme */
+.st-emotion-cache-1y4p8pa,
+.st-emotion-cache-1y4p8pa p, 
+.st-emotion-cache-1y4p8pa li,
+.st-emotion-cache-1y4p8pa label,
+.st-emotion-cache-1y4p8pa h1,
+.st-emotion-cache-1y4p8pa h2,
+.st-emotion-cache-1y4p8pa h3,
+.st-emotion-cache-1y4p8pa .st-emotion-cache-1kyxreq {
+    color: #31333F !important;
+}
+
+/* --- TAB STYLING --- */
+/* Style for the tab buttons */
+[data-testid="stTabs"] button {
+    font-weight: bold;
+    color: #888; /* Grey for inactive tabs */
+}
+
+/* Style for the active tab button */
+[data-testid="stTabs"] button[aria-selected="true"] {
+    color: #FF4B4B; /* Red highlight color for the active tab */
+    border-bottom: 2px solid #FF4B4B; /* Red underline for the active tab */
+}
+
+
+/* --- BUTTON STYLING --- */
+/* Style the primary button */
+[data-testid="stButton"] > button {
+    border-radius: 8px;
+    font-weight: bold;
+    border: none;
+    background-color: #FF4B4B; /* Red color for the main buttons */
+    color: white;
+    transition: background-color 0.2s;
+}
+
+/* Add a hover effect for the button */
+[data-testid="stButton"] > button:hover {
+    background-color: #E04040; /* A slightly darker red for hover */
+    color: white;
+}
+
+/* --- SLIDER STYLING --- */
+/* Target the filled part of the slider track */
+div[data-testid="stSlider"] > div:nth-child(2) > div > div > div:nth-child(2) {
+    background-color: #FF4B4B; /* Red color for the slider track */
+}
+
+/* Target the thumb (the circle handle) of the slider */
+div[data-testid="stSlider"] div[role="slider"] {
+    background-color: #FF4B4B; /* Red color for the slider handle */
+}
+
+/* --- RADIO BUTTON STYLING --- */
+/* Target the selected radio button dot */
+[data-testid="stRadio"] input:checked + div::before {
+    background-color: #FF4B4B !important; /* Red color for the selected radio option */
+}
+

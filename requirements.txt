@@ -1,0 +1,8 @@
+streamlit
+pickle-mixin
+random-word
+plotly
+google-generativeai
+xgboost
+pandas
+scikit-learn

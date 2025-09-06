@@ -1,0 +1,9 @@
+# Ignore the virtual environment
+venv/
+
+# Ignore all secret files
+.env
+.streamlit/secrets.toml
+
+# Ignore data log file
+log_data.csv

@@ -16,9 +16,9 @@ st.set_page_config(
     page_icon="❤️‍🩹"
 )
 
-# --- DIRECT CSS INJECTION WITH NEW BACKGROUND ---
+# --- DIRECT CSS INJECTION WITH TEXT COLOR FIX ---
 custom_css = """
-/* --- HEARTBEAT ANIMATION BACKGROUND (FIXED) --- */
+/* --- HEARTBEAT ANIMATION BACKGROUND --- */
 @keyframes ekg-scroll {
     from { background-position-x: 0; }
     to { background-position-x: -1000px; }
@@ -31,16 +31,63 @@ custom_css = """
     background-position: center;
     animation: ekg-scroll 10s linear infinite;
 }
-[data-testid="stSidebar"] { background-color: #FFFFFF !important; }
-.st-emotion-cache-1y4p8pa { background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-radius: 10px; padding: 2rem; border: 1px solid #E0E0E0; }
-.st-emotion-cache-1y4p8pa, .st-emotion-cache-1y4p8pa p, .st-emotion-cache-1y4p8pa li, .st-emotion-cache-1y4p8pa label, .st-emotion-cache-1y4p8pa h1, .st-emotion-cache-1y4p8pa h2, .st-emotion-cache-1y4p8pa h3, .st-emotion-cache-1y4p8pa .st-emotion-cache-1kyxreq { color: #31333F !important; }
-[data-testid="stTabs"] button { font-weight: bold; color: #888; }
-[data-testid="stTabs"] button[aria-selected="true"] { color: #FF4B4B; border-bottom: 2px solid #FF4B4B; }
-[data-testid="stButton"] > button { border-radius: 8px; font-weight: bold; border: none; background-color: #FF4B4B; color: white; transition: background-color 0.2s; }
-[data-testid="stButton"] > button:hover { background-color: #E04040; color: white; }
-div[data-testid="stSlider"] > div:nth-child(2) > div > div > div:nth-child(2) { background-color: #FF4B4B; }
-div[data-testid="stSlider"] div[role="slider"] { background-color: #FF4B4B; }
-[data-testid="stRadio"] input:checked + div::before { background-color: #FF4B4B !important; }
+
+/* Force a white background on the sidebar */
+[data-testid="stSidebar"] {
+    background-color: #FFFFFF !important;
+}
+
+/* --- MAIN CARD STYLING --- */
+.st-emotion-cache-1y4p8pa {
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 2rem;
+    border: 1px solid #E0E0E0;
+}
+
+/* --- UNIVERSAL TEXT COLOR FIX (MOST IMPORTANT PART) --- */
+/* This targets all the main text elements to override the theme */
+.stApp h1, .stApp h2, .stApp h3, .stApp p, .stApp li, .stApp label {
+    color: #31333F !important;
+}
+
+/* --- TAB STYLING --- */
+[data-testid="stTabs"] button {
+    font-weight: bold;
+    color: #888 !important; /* Force color for inactive tabs */
+}
+[data-testid="stTabs"] button[aria-selected="true"] {
+    color: #FF4B4B !important; /* Force color for active tab */
+    border-bottom: 2px solid #FF4B4B;
+}
+
+/* --- BUTTON STYLING --- */
+[data-testid="stButton"] > button {
+    border-radius: 8px;
+    font-weight: bold;
+    border: none;
+    background-color: #FF4B4B;
+    color: white;
+    transition: background-color 0.2s;
+}
+[data-testid="stButton"] > button:hover {
+    background-color: #E04040;
+    color: white;
+}
+
+/* --- SLIDER STYLING --- */
+div[data-testid="stSlider"] > div:nth-child(2) > div > div > div:nth-child(2) {
+    background-color: #FF4B4B;
+}
+div[data-testid="stSlider"] div[role="slider"] {
+    background-color: #FF4B4B;
+}
+
+/* --- RADIO BUTTON STYLING --- */
+[data-testid="stRadio"] input:checked + div::before {
+    background-color: #FF4B4B !important;
+}
 """
 st.markdown(f'<style>{custom_css}</style>', unsafe_allow_html=True)
 
@@ -343,32 +390,16 @@ with tab_chatbot:
             st.rerun()
 
         try:
-            api_key = None
+            api_key = os.getenv("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
             
-            env_api_key = os.getenv("GEMINI_API_KEY")
-            st.info("Attempting to read environment variable 'GEMINI_API_KEY'...")
-            if env_api_key:
-                st.success("Found API key in environment variable.")
-                api_key = env_api_key
-            else:
-                st.warning("Environment variable 'GEMINI_API_KEY' not found.")
-
             if not api_key:
-                st.info("Attempting to read Streamlit secrets...")
-                if "GEMINI_API_KEY" in st.secrets:
-                    st.success("Found API key in Streamlit secrets.")
-                    api_key = st.secrets["GEMINI_API_KEY"]
-                else:
-                    st.warning("API key not found in Streamlit secrets.")
-
-            if not api_key:
-                st.error("Could not find Gemini API key. Please ensure it is set correctly for your environment.")
+                st.error("Gemini API key not found. Please set it in your secrets or environment variables.")
                 st.stop()
-            
+                
             genai.configure(api_key=api_key)
 
         except Exception as e:
-            st.error(f"An error occurred during configuration: {e}")
+            st.error(f"Could not configure Gemini: {e}")
             st.stop()
 
         SYSTEM_PROMPT = """You are a friendly and helpful AI Health Assistant. Your role is to provide general health information and answer questions clearly and concisely.

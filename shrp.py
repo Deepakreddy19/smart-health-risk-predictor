@@ -5,6 +5,8 @@ import plotly.express as px
 import google.generativeai as genai
 import os
 import xgboost
+import pandas as pd
+from datetime import datetime
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
@@ -146,6 +148,27 @@ def show_risk_gauge(prob):
     )
     st.plotly_chart(fig, use_container_width=True)
 
+def log_prediction(disease_type, features, prediction, probability):
+    log_file = "log_data.csv"
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    log_data = {
+        "timestamp": timestamp,
+        "disease_type": disease_type,
+        "prediction": "High Risk" if prediction == 1 else "Low Risk",
+        "probability": f"{probability:.2f}",
+    }
+    # Create a dictionary from the features list
+    feature_dict = {f"feature_{i+1}": val for i, val in enumerate(features)}
+    log_data.update(feature_dict)
+        
+    df_log = pd.DataFrame([log_data])
+    
+    if not os.path.exists(log_file):
+        df_log.to_csv(log_file, index=False)
+    else:
+        df_log.to_csv(log_file, mode='a', header=False, index=False)
+
 # ---------------- MAIN PAGE LAYOUT ----------------
 st.title("Smart Health Risk Prediction Dashboard")
 st.markdown("Select a tool from the tabs below to assess health risks or chat with our AI assistant.")
@@ -185,11 +208,13 @@ with tab_heart:
             sex_val = 1 if sex == "Male" else 0
             fbs_val = 1 if fbs == "Yes" else 0
             exang_val = 1 if exang == "Yes" else 0
-            features = [[age, sex_val, cp, trestbps, chol, fbs_val, restecg, thalach, exang_val, oldpeak, slope, ca, thal]]
+            features = [age, sex_val, cp, trestbps, chol, fbs_val, restecg, thalach, exang_val, oldpeak, slope, ca, thal]
             
-            prediction = heart_model.predict(features)[0]
-            prob = heart_model.predict_proba(features)[0][1]
+            prediction = heart_model.predict([features])[0]
+            prob = heart_model.predict_proba([features])[0][1]
             
+            log_prediction("Heart Disease", features, prediction, prob)
+
             st.markdown("---")
             st.subheader("Prediction Result")
             col1, col2 = st.columns([1, 2])
@@ -228,9 +253,11 @@ with tab_diabetes:
             age_d = st.slider("👤 Age", 0, 120, 33, key="d_age")
 
         if st.button("🔎 Predict Diabetes Risk", use_container_width=True, type="primary"):
-            features = [[pregnancies, glucose, blood_pressure, skin_thickness, insulin, bmi_input, dpf, age_d]]
-            prediction = diabetes_model.predict(features)[0]
-            prob = diabetes_model.predict_proba(features)[0][1]
+            features = [pregnancies, glucose, blood_pressure, skin_thickness, insulin, bmi_input, dpf, age_d]
+            prediction = diabetes_model.predict([features])[0]
+            prob = diabetes_model.predict_proba([features])[0][1]
+            
+            log_prediction("Diabetes", features, prediction, prob)
             
             st.markdown("---")
             st.subheader("Prediction Result")
@@ -287,10 +314,12 @@ with tab_kidney:
 
         if st.button("🔎 Predict Kidney Disease Risk", use_container_width=True, type="primary"):
             cat_map = { "rbc": {"normal": 0, "abnormal": 1}, "pc": {"normal": 0, "abnormal": 1}, "pcc": {"notpresent": 0, "present": 1}, "ba": {"notpresent": 0, "present": 1}, "htn": {"no": 0, "yes": 1}, "dm": {"no": 0, "yes": 1}, "cad": {"no": 0, "yes": 1}, "appet": {"good": 0, "poor": 1}, "pe": {"no": 0, "yes": 1}, "ane": {"no": 0, "yes": 1} }
-            features = [[ age_k, bp, sg, al, su, cat_map["rbc"][rbc], cat_map["pc"][pc], cat_map["pcc"][pcc], cat_map["ba"][ba], bgr, bu, sc, sod, pot, hemo, pcv, wc, rc, cat_map["htn"][htn], cat_map["dm"][dm], cat_map["cad"][cad], cat_map["appet"][appet], cat_map["pe"][pe], cat_map["ane"][ane] ]]
+            features = [ age_k, bp, sg, al, su, cat_map["rbc"][rbc], cat_map["pc"][pc], cat_map["pcc"][pcc], cat_map["ba"][ba], bgr, bu, sc, sod, pot, hemo, pcv, wc, rc, cat_map["htn"][htn], cat_map["dm"][dm], cat_map["cad"][cad], cat_map["appet"][appet], cat_map["pe"][pe], cat_map["ane"][ane] ]
             
-            prediction = kidney_model.predict(features)[0]
-            prob = kidney_model.predict_proba(features)[0][1]
+            prediction = kidney_model.predict([features])[0]
+            prob = kidney_model.predict_proba([features])[0][1]
+
+            log_prediction("Kidney Disease", features, prediction, prob)
             
             st.markdown("---")
             st.subheader("Prediction Result")
@@ -373,13 +402,25 @@ with tab_chatbot:
             st.rerun()
 
         try:
-            api_key = st.secrets["GEMINI_API_KEY"]
+            api_key = os.getenv("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+            
+            if not api_key:
+                st.error("Gemini API key not found. Please set it in your secrets or environment variables.")
+                st.stop()
+                
             genai.configure(api_key=api_key)
-        except Exception:
-            st.error("Could not configure Gemini. Have you added your API key to the .streamlit/secrets.toml file?")
+
+        except Exception as e:
+            st.error(f"Could not configure Gemini: {e}")
             st.stop()
 
-        SYSTEM_PROMPT = """You are a friendly and helpful AI Health Assistant...""" # (Same as before)
+        SYSTEM_PROMPT = """You are a friendly and helpful AI Health Assistant. Your role is to provide general health information and answer questions clearly and concisely.
+You must adhere to the following rules:
+1.  **DO NOT PROVIDE MEDICAL ADVICE, DIAGNOSES, OR TREATMENT PLANS.**
+2.  If a user asks for a diagnosis or medical advice, you must decline and strongly recommend they consult a licensed healthcare professional.
+3.  Keep your answers concise and easy to understand, avoiding overly technical jargon.
+4.  Your tone should be empathetic, supportive, and professional.
+5.  **STAY ON TOPIC.** Your expertise is in health and wellness. If the user asks a question about a completely unrelated topic (e.g., politics, coding, history, celebrities), you must politely state that the question is outside your scope as a health assistant and that you can only answer health-related questions."""
         
         if "chat_session" not in st.session_state or st.session_state.chat_session is None:
             model = genai.GenerativeModel(model_name="gemini-1.5-flash-latest", system_instruction=SYSTEM_PROMPT)

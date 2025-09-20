@@ -7,6 +7,7 @@ import os
 import xgboost
 import pandas as pd
 from datetime import datetime
+from s3_model_loader import load_model_from_s3 # <-- IMPORT THE S3 LOADER
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
@@ -92,13 +93,22 @@ div[data-testid="stSlider"] div[role="slider"] {
 st.markdown(f'<style>{custom_css}</style>', unsafe_allow_html=True)
 
 
-# ---------------- LOAD MODELS ----------------
-try:
-    heart_model = pickle.load(open("models/heart_model.pkl", "rb"))
-    diabetes_model = pickle.load(open("models/diabetes_model.pkl", "rb"))
-    kidney_model = pickle.load(open("models/kidney_model.pkl", "rb"))
-except FileNotFoundError:
-    st.error("Model files not found. Please ensure 'heart_model.pkl', 'diabetes_model.pkl', and 'kidney_model.pkl' are in the 'models/' directory.")
+# ---------------- LOAD MODELS FROM S3 ----------------
+# This section is now updated to load models securely from AWS S3
+model_files = {
+    'Heart Disease': 'heart_model.pkl',
+    'Diabetes': 'diabetes_model.pkl',
+    'Kidney Disease': 'kidney_model.pkl'
+}
+
+models = {}
+with st.spinner('Loading prediction models from the cloud...'):
+    for key, file_name in model_files.items():
+        models[key] = load_model_from_s3(file_name)
+
+# Stop the app if any model failed to load
+if not all(models.values()):
+    st.error("A critical error occurred while loading prediction models. The application cannot continue.")
     st.stop()
 
 
@@ -198,8 +208,8 @@ with tab_heart:
             exang_val = 1 if exang == "Yes" else 0
             features = [age, sex_val, cp, trestbps, chol, fbs_val, restecg, thalach, exang_val, oldpeak, slope, ca, thal]
             
-            prediction = heart_model.predict([features])[0]
-            prob = heart_model.predict_proba([features])[0][1]
+            prediction = models['Heart Disease'].predict([features])[0]
+            prob = models['Heart Disease'].predict_proba([features])[0][1]
             
             log_prediction("Heart Disease", features, prediction, prob)
 
@@ -242,8 +252,9 @@ with tab_diabetes:
 
         if st.button("🔎 Predict Diabetes Risk", use_container_width=True, type="primary"):
             features = [pregnancies, glucose, blood_pressure, skin_thickness, insulin, bmi_input, dpf, age_d]
-            prediction = diabetes_model.predict([features])[0]
-            prob = diabetes_model.predict_proba([features])[0][1]
+            
+            prediction = models['Diabetes'].predict([features])[0]
+            prob = models['Diabetes'].predict_proba([features])[0][1]
             
             log_prediction("Diabetes", features, prediction, prob)
             
@@ -304,8 +315,8 @@ with tab_kidney:
             cat_map = { "rbc": {"normal": 0, "abnormal": 1}, "pc": {"normal": 0, "abnormal": 1}, "pcc": {"notpresent": 0, "present": 1}, "ba": {"notpresent": 0, "present": 1}, "htn": {"no": 0, "yes": 1}, "dm": {"no": 0, "yes": 1}, "cad": {"no": 0, "yes": 1}, "appet": {"good": 0, "poor": 1}, "pe": {"no": 0, "yes": 1}, "ane": {"no": 0, "yes": 1} }
             features = [ age_k, bp, sg, al, su, cat_map["rbc"][rbc], cat_map["pc"][pc], cat_map["pcc"][pcc], cat_map["ba"][ba], bgr, bu, sc, sod, pot, hemo, pcv, wc, rc, cat_map["htn"][htn], cat_map["dm"][dm], cat_map["cad"][cad], cat_map["appet"][appet], cat_map["pe"][pe], cat_map["ane"][ane] ]
             
-            prediction = kidney_model.predict([features])[0]
-            prob = kidney_model.predict_proba([features])[0][1]
+            prediction = models['Kidney Disease'].predict([features])[0]
+            prob = models['Kidney Disease'].predict_proba([features])[0][1]
 
             log_prediction("Kidney Disease", features, prediction, prob)
             
@@ -456,6 +467,7 @@ with tab_about:
         - **Machine Learning:** Scikit-learn, XGBoost, Pandas
         - **Frontend:** Streamlit, Plotly
         - **AI Integration:** Google Gemini API
+        - **Cloud & CI/CD:** AWS EC2, S3, Docker, Nginx, GitHub Actions
 
         ### **Disclaimer:**
         This application is an educational tool and **is not a substitute for professional medical advice, diagnosis, or treatment.** The predictions are based on statistical models and should be considered as preliminary insights only. Always consult with a qualified healthcare provider for any health concerns.
@@ -464,4 +476,3 @@ with tab_about:
         - **Name:** Vangoori Deepak Reddy
         - **Connect with me:** [LinkedIn](https://www.linkedin.com/in/vangoori-deepak-reddy-696890250) | [GitHub](https://github.com/Deepakreddy19)
         """)
-

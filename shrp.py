@@ -473,6 +473,7 @@ with tab_about:
         This application is an educational tool and **is not a substitute for professional medical advice, diagnosis, or treatment.** The predictions are based on statistical models and should be considered as preliminary insights only. Always consult with a qualified healthcare provider for any health concerns.
 
         ### **Developer:**
-        - **Name:** Vangoori Deepak Reddy
+        - **Name:** VANGOORI DEEPAK REDDY
+        - **Role:** Data Scientist | ML Engineer
         - **Connect with me:** [LinkedIn](https://www.linkedin.com/in/vangoori-deepak-reddy-696890250) | [GitHub](https://github.com/Deepakreddy19)
         """)

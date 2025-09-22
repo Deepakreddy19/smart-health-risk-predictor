@@ -1,9 +1,7 @@
 streamlit
-pickle-mixin
-random-word
-plotly
-google-generativeai
-xgboost
 pandas
 scikit-learn
+xgboost
 boto3
+plotly
+google-generativeai
